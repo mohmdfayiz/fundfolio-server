@@ -1,51 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { User } from './schemas/user.schema';
+import mongoose from 'mongoose';
+import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
 
-    private readonly users = [
-        {
-            id: 1,
-            username: 'john',
-            email: '7bI8d@example.com',
-        },
-        {
-            id: 2,
-            username: 'chris',
-            email: '6KXUZ@example.com',
-        },
-        {
-            id: 3,
-            username: 'maria',
-            email: 'JpjQZ@example.com',
-        },
-    ];
+    constructor(
+        @InjectModel(User.name)
+        private userModel: mongoose.Model<User>
+    ) { }
 
-    getUserData(id: string) {
-        const user = this.users.find(user => user.id === parseInt(id));
-
-        if(!user) {
-            return {
-                success: false,
-                message: 'User not found'
-            }
+    async get(id: string): Promise<User> {
+        const user = await this.userModel.findById(id);
+        if (!user) {
+            throw new NotFoundException('User not found');
         }
 
-        return {
-            success: true,
-            data: user
-        };
+        return user;
     }
 
-    createUser(userData: CreateUserDto) {
-        const user = { id: this.users.length + 1, ...userData }
-        this.users.push(user);
-
-        return {
-            success: true,
-            message: 'User created successfully',
-            data: user
-        }
+    async getLoginUser(email: string): Promise<User> {
+        return await this.userModel.findOne({ email }).select('+password');
     }
+
+    async register(user: CreateUserDto): Promise<User> {
+        return await this.userModel.create(user);
+    }
+
+    async update(id: string, user: UpdateUserDto): Promise<User> {
+        return await this.userModel.findByIdAndUpdate(id, { $set: user }, { new: true });
+    }
+
+    async delete(id: string): Promise<User> {
+        return await this.userModel.findByIdAndDelete(id);
+    }
+
 }
