@@ -10,7 +10,7 @@ export class AuthService {
         private jwtService: JwtService
     ) { }
 
-    async signIn(email: string, password: string): Promise<{ token: string }> {
+    async signIn(email: string, password: string) {
         const user = await this.userService.getLoginUser(email);
 
         if (!user) {
@@ -22,17 +22,22 @@ export class AuthService {
             throw new UnauthorizedException('Incorrect email or password');
         }
 
-        return { token: await this.jwtService.signAsync({ userId: user._id, email: user.email }) };
+        return {
+            user: { _id: user._id, email: user.email, username: user.username },
+            token: await this.jwtService.signAsync({ userId: user._id, email: user.email })
+        };
     }
 
     async signUp(username: string, email: string) {
         const user = await this.userService.register({ username, email });
-        return { token: await this.jwtService.signAsync({ userId: user._id, email: user.email }) }
+        return {
+            user: { _id: user._id, email: user.email, username: user.username },
+            token: await this.jwtService.signAsync({ userId: user._id, email: user.email })
+        }
     }
 
     async setPassword(id: string, password: string) {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await this.userService.update(id, { password: hashedPassword });
-        return { token: await this.jwtService.signAsync({ userId: user._id, email: user.email }) }
+        await this.userService.update(id, { password: hashedPassword });
     }
 }

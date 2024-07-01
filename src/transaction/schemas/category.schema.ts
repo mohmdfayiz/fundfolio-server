@@ -1,8 +1,8 @@
 import { Schema, Prop, SchemaFactory } from "@nestjs/mongoose";
-import { Types } from "mongoose";
+import { Types, Document } from "mongoose";
 
 @Schema({ timestamps: true })
-export class Category {
+export class Category extends Document {
 
     @Prop({ required: true, ref: 'User' })
     userId: Types.ObjectId

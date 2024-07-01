@@ -1,10 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
 
-@Schema({
-    timestamps: true
-})
-
+@Schema({ timestamps: true })
 export class User extends Document {
 
     @Prop({ required: true })
@@ -14,7 +11,7 @@ export class User extends Document {
     email: string;
 
     @Prop()
-    profilePicture: string;
+    profilePic: string;
 
     @Prop({ select: false })
     password: string;

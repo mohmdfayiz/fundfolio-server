@@ -1,26 +1,26 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards, Request } from '@nestjs/common';
-import { AuthGuard } from './auth.guard';
+import { Body, Controller, HttpCode, HttpStatus, SetMetadata, Post, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SigninDto } from './dto/signin.dto';
 import { SignupDto } from './dto/signup.dto';
+import { Public } from 'src/common/constants';
 
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) { }
 
+    @Public()
     @HttpCode(HttpStatus.OK)
     @Post('signin')
     signIn(@Body() signinDto: SigninDto) {
         return this.authService.signIn(signinDto.email, signinDto.password);
     }
 
-    @HttpCode(HttpStatus.CREATED)
+    @Public()
     @Post('signup')
     signUp(@Body() signupDto: SignupDto) {
         return this.authService.signUp(signupDto.username, signupDto.email);
     }
 
-    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     @Post('password')
     setPassword(@Request() req, @Body() { password }: { password: string }) {

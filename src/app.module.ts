@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
@@ -9,6 +10,9 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { NoteModule } from './note/note.module';
+
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { AuthGuard } from './auth/auth.guard';
 
 @Module({
   imports: [
@@ -23,7 +27,16 @@ import { NoteModule } from './note/note.module';
     NoteModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    { provide: APP_GUARD, useClass: AuthGuard },
+    AppService
+  ],
 })
 
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes('*');
+  }
+ }
