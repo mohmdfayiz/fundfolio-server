@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from './schemas/user.schema';
 import mongoose from 'mongoose';
+import { User } from './schemas/user.schema';
+import { TransactionService } from 'src/transaction/transaction.service';
+import { NoteService } from 'src/note/note.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
@@ -9,7 +11,9 @@ export class UserService {
 
     constructor(
         @InjectModel(User.name)
-        private userModel: mongoose.Model<User>
+        private userModel: mongoose.Model<User>,
+        private transactionService: TransactionService,
+        private noteService: NoteService
     ) { }
 
     async get(id: string): Promise<User> {
@@ -30,7 +34,9 @@ export class UserService {
         return await this.userModel.findByIdAndUpdate(id, { $set: user }, { new: true });
     }
 
-    async delete(id: string): Promise<User> {
+    async delete(id: string) {
+        await this.transactionService.deleteCategoriesAndTransactions(id);
+        await this.noteService.deleteAllNotes(id);
         return await this.userModel.findByIdAndDelete(id);
     }
 

@@ -13,6 +13,7 @@ import { CategorySchema } from './schemas/category.schema';
     ])
   ],
   controllers: [TransactionController],
-  providers: [TransactionService]
+  providers: [TransactionService],
+  exports: [TransactionService]
 })
 export class TransactionModule { }

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { Transaction } from './schemas/transaction.schema';
 import { Category } from './schemas/category.schema';
@@ -14,6 +14,18 @@ export class TransactionController {
     async getGroupTransactions(@Request() req): Promise<Transaction[]> {
         const userId = req.user.userId;
         return await this.transactionService.getTransactionsGroup(userId);
+    }
+
+    @Post()
+    async createTransaction(@Request() req, @Body() transaction: CreateTransactionDto): Promise<Transaction> {
+        const userId = req.user.userId;
+        return await this.transactionService.create(userId, transaction);
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('delete')
+    async deleteTransaction(@Body() { ids }: { ids: string[] }) {
+        return await this.transactionService.delete(ids);
     }
 
     @Get('recent')
@@ -34,15 +46,10 @@ export class TransactionController {
         return await this.transactionService.getStats(userId, parseInt(month), parseInt(year));
     }
 
-    @Post()
-    async createTransaction(@Request() req, @Body() transaction: CreateTransactionDto): Promise<Transaction> {
+    @Get('date/:month/:year')
+    async getTransactionsByMonth(@Request() req, @Param('month') month: string, @Param('year') year: string) {
         const userId = req.user.userId;
-        return await this.transactionService.create(userId, transaction);
-    }
-
-    @Delete(':id')
-    async deleteTransaction(@Body() id: string): Promise<Transaction> {
-        return await this.transactionService.delete(id);
+        return await this.transactionService.getTransactionsByMonth(userId, parseInt(month), parseInt(year));
     }
 
     @Get('category')

@@ -77,6 +77,29 @@ export class TransactionService {
         return stats[0]
     }
 
+    async getTransactionsByMonth(userId: string, month: number, year: number) {
+        const transactions = await this.transactionModel.aggregate([
+            { $match: { userId: new Types.ObjectId(userId) } },
+            { $match: { $expr: { $eq: [{ $month: "$createdAt" }, month] } } },
+            { $match: { $expr: { $eq: [{ $year: "$createdAt" }, year] } } },
+            {
+                $lookup: {
+                    from: 'categories',
+                    localField: 'category',
+                    foreignField: '_id',
+                    as: 'category',
+                    pipeline: [
+                        { $project: { name: 1, icon: 1, bgColour: 1 } }
+                    ]
+                }
+            },
+            { $unwind: '$category' },
+            { $sort: { createdAt: -1 } },
+        ])
+
+        return { transactions };
+    }
+
     async create(userId: string, transaction: CreateTransactionDto): Promise<Transaction> {
         return await this.transactionModel.create({
             userId: new Types.ObjectId(userId),
@@ -88,8 +111,10 @@ export class TransactionService {
         });
     }
 
-    async delete(id: string): Promise<Transaction> {
-        return await this.transactionModel.findByIdAndDelete(new Types.ObjectId(id));
+    async delete(ids: string[]) {
+        return await this.transactionModel.deleteMany({
+            _id: { $in: ids.map(id => new Types.ObjectId(id)) }
+        });
     }
 
     async getCategories(userId: string): Promise<Category[]> {
@@ -114,6 +139,12 @@ export class TransactionService {
             throw new ForbiddenException('Cannot delete category with transactions');
         }
         return await this.categoryModel.findByIdAndDelete(new Types.ObjectId(id));
+    }
+
+    async deleteCategoriesAndTransactions(userId: string) {
+        await this.categoryModel.deleteMany({ userId: new Types.ObjectId(userId) });
+        await this.transactionModel.deleteMany({ userId: new Types.ObjectId(userId) });
+        return { message: 'Categories and transactions deleted successfully' };
     }
 
 }

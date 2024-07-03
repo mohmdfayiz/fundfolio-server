@@ -46,4 +46,8 @@ export class NoteService {
             }
         }, { new: true });
     }
+
+    async deleteAllNotes(userId: string) {
+        return await this.noteModel.deleteMany({ userId: new Types.ObjectId(userId) });
+    }
 }
