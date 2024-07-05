@@ -14,8 +14,7 @@ export class NoteService {
     async getNotes(userId: string) {
         return await this.noteModel.aggregate([
             { $match: { userId: new Types.ObjectId(userId) } },
-            // { $sort: { createdAt: -1 } },
-            { $sort: { pinned: -1 } },
+            { $sort: { pinned: -1, createdAt: -1 } },
         ])
     }
 
