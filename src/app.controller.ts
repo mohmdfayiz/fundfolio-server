@@ -10,8 +10,4 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get('test')
-  getTest(): string {
-    return process.env.MONGO_CONNECTION_STRING;
-  }
 }

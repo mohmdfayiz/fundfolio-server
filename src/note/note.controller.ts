@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Request } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, Request } from '@nestjs/common';
 import { NoteService } from './note.service';
 import { Note } from './schemas/note.schema';
 
@@ -25,9 +25,10 @@ export class NoteController {
         return await this.noteService.updateNote(id, note);
     }
 
-    @Delete(':id')
-    async deleteNote(@Param('id') id: string) {
-        return await this.noteService.deleteNote(id);
+    @HttpCode(HttpStatus.OK)
+    @Post('delete')
+    async deleteNote(@Body('ids') ids: string[]) {
+        return await this.noteService.deleteNotes(ids);
     }
 
     @Post(':id/:action')

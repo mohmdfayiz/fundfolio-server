@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Request, HttpCode, HttpStatus, Put } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { Transaction } from './schemas/transaction.schema';
 import { Category } from './schemas/category.schema';
@@ -64,7 +64,7 @@ export class TransactionController {
         return await this.transactionService.createCategory(userId, category);
     }
 
-    @Patch('category/:id')
+    @Put('category/:id')
     async updateCategory(@Param('id') id: string, @Body() category: Category): Promise<Category> {
         return await this.transactionService.updateCategory(id, category);
     }

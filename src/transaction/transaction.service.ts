@@ -122,15 +122,19 @@ export class TransactionService {
     }
 
     async createCategory(userId: string, category: CreateCategoryDto): Promise<Category> {
+        const existingCategory = await this.categoryModel.exists({ userId: new Types.ObjectId(userId), name: category.name.trim() });
+        if (existingCategory) throw new ForbiddenException('Category already exists');
         try {
-            return await this.categoryModel.create({ userId: new Types.ObjectId(userId), ...category });
+            return await this.categoryModel.create({ userId: new Types.ObjectId(userId), ...category, name: category.name.trim() });
         } catch (error) {
             console.log(error);
         }
     }
 
     async updateCategory(id: string, category: Category): Promise<Category> {
-        return await this.categoryModel.findByIdAndUpdate(new Types.ObjectId(id), { $set: category }, { new: true });
+        const existingCategory = await this.categoryModel.exists({ _id: { $ne: new Types.ObjectId(id) }, userId: new Types.ObjectId(category.userId), name: category.name.trim() });
+        if (existingCategory) throw new ForbiddenException('Category already exists');
+        return await this.categoryModel.findByIdAndUpdate(new Types.ObjectId(id), { $set: { ...category, userId: new Types.ObjectId(category.userId) } }, { new: true });
     }
 
     async deleteCategory(id: string): Promise<Category> {

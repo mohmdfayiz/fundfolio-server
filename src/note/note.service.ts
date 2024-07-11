@@ -33,8 +33,10 @@ export class NoteService {
         }, { new: true });
     }
 
-    async deleteNote(id: string) {
-        return await this.noteModel.findByIdAndDelete(id);
+    async deleteNotes(ids: string[]) {
+        return await this.noteModel.deleteMany({
+            _id: { $in: ids.map(id => new Types.ObjectId(id)) }
+        });
     }
 
     async pinNote(id: string, action: string) {
