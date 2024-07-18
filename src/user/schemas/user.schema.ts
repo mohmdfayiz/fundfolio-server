@@ -4,10 +4,10 @@ import { Document } from "mongoose";
 @Schema({ timestamps: true })
 export class User extends Document {
 
-    @Prop({ required: true })
+    @Prop({ required: true, trim: true })
     username: string;
 
-    @Prop({ unique: [true, 'Duplicate email entered'] })
+    @Prop({ required: true, unique: true, lowercase: true, trim: true })
     email: string;
 
     @Prop()

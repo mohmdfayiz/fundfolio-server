@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { User } from './schemas/user.schema';
@@ -27,6 +27,12 @@ export class UserService {
     }
 
     async register(user: CreateUserDto): Promise<User> {
+
+        const userExists = await this.userModel.exists({ email: user.email });
+        if (userExists) {
+            throw new ForbiddenException('User already exists');
+        }
+
         return await this.userModel.create(user);
     }
 

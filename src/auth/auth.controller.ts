@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Request } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Request, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SigninDto } from './dto/signin.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -26,5 +26,25 @@ export class AuthController {
     setPassword(@Request() req, @Body() { password }: { password: string }) {
         const userId = req.user.userId;
         return this.authService.setPassword(userId, password);
+    }
+
+    @Public()
+    @HttpCode(HttpStatus.OK)
+    @Post('refresh-token')
+    refreshToken(@Body('refreshToken') refreshToken: string) {
+        if (!refreshToken) {
+            throw new UnauthorizedException('Refresh token is required');
+        }
+        return this.authService.refreshToken(refreshToken);
+    }
+
+    @Public()
+    @HttpCode(HttpStatus.OK)
+    @Post('logout')
+    logout(@Body('refreshToken') refreshToken: string, @Body('allDevices') allDevices: boolean) {
+        if (!refreshToken) {
+            throw new UnauthorizedException('Refresh token is required');
+        }
+        return this.authService.logout(refreshToken, allDevices);
     }
 }
