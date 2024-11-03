@@ -17,8 +17,24 @@ export class TransactionService {
     ) { }
 
     async getTransactionsGroup(userId: string): Promise<Transaction[]> {
+
+        // Get first day of current month
+        const currentDate = new Date();
+
+        // Calculate first day of 3 months ago
+        const threeMonthsAgo = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth() - 2,
+            1
+        );
+
         const transactions = await this.transactionModel.aggregate([
-            { $match: { userId: new Types.ObjectId(userId) } },
+            {
+                $match: {
+                    userId: new Types.ObjectId(userId),
+                    createdAt: { $gte: threeMonthsAgo },
+                }
+            },
             { $sort: { createdAt: -1 } },
             {
                 $project: {
