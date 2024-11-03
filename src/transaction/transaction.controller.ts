@@ -3,7 +3,7 @@ import { TransactionService } from './transaction.service';
 import { Transaction } from './schemas/transaction.schema';
 import { Category } from './schemas/category.schema';
 import { CreateCategoryDto } from './dto/category.dto';
-import { CreateTransactionDto } from './dto/transaction.dto';
+import { CreateTransactionDto, UpdateTransactionDto } from './dto/transaction.dto';
 
 @Controller('transaction')
 export class TransactionController {
@@ -20,6 +20,11 @@ export class TransactionController {
     async createTransaction(@Request() req, @Body() transaction: CreateTransactionDto): Promise<Transaction> {
         const userId = req.user.userId;
         return await this.transactionService.create(userId, transaction);
+    }
+
+    @Put(':transactionId')
+    async updateTransaction(@Request() req, @Param('transactionId') transactionId: string, @Body() transaction: UpdateTransactionDto): Promise<Transaction> {
+        return await this.transactionService.updateTransaction(transactionId, transaction);
     }
 
     @HttpCode(HttpStatus.OK)

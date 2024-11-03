@@ -4,7 +4,7 @@ import { Transaction } from './schemas/transaction.schema';
 import { Category } from './schemas/category.schema';
 import mongoose, { Types } from 'mongoose';
 import { CreateCategoryDto } from './dto/category.dto';
-import { CreateTransactionDto } from './dto/transaction.dto';
+import { CreateTransactionDto, UpdateTransactionDto } from './dto/transaction.dto';
 
 @Injectable()
 export class TransactionService {
@@ -34,7 +34,7 @@ export class TransactionService {
                     foreignField: '_id',
                     as: 'category',
                     pipeline: [
-                        { $project: { name: 1, icon: 1, bgColour: 1 } }
+                        { $project: { _id: 1, name: 1, icon: 1, bgColour: 1 } }
                     ]
                 }
             },
@@ -89,7 +89,7 @@ export class TransactionService {
                     foreignField: '_id',
                     as: 'category',
                     pipeline: [
-                        { $project: { name: 1, icon: 1, bgColour: 1 } }
+                        { $project: { _id: 1, name: 1, icon: 1, bgColour: 1 } }
                     ]
                 }
             },
@@ -107,8 +107,26 @@ export class TransactionService {
             amount: transaction.transactionType === 'Income' ? transaction.amount : -transaction.amount,
             paymentMethod: transaction.paymentMethod,
             transactionType: transaction.transactionType,
+            description: transaction?.description,
             createdAt: transaction.createdAt
         });
+    }
+
+    async updateTransaction(transactionId: string, transaction: UpdateTransactionDto): Promise<Transaction> {
+        return await this.transactionModel.findOneAndUpdate(
+            { _id: new Types.ObjectId(transactionId) },
+            {
+                $set: {
+                    category: new Types.ObjectId(transaction.category),
+                    amount: transaction.transactionType === 'Income' ? transaction.amount : -transaction.amount,
+                    paymentMethod: transaction.paymentMethod,
+                    transactionType: transaction.transactionType,
+                    description: transaction?.description,
+                    createdAt: new Date(transaction.createdAt)
+                }
+            },
+            { new: true }
+        );
     }
 
     async delete(ids: string[]) {

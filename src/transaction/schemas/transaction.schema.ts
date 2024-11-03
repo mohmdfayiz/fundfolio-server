@@ -1,7 +1,7 @@
 import { Schema, Prop, SchemaFactory } from "@nestjs/mongoose";
 import { Types, Document } from "mongoose";
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: { createdAt: false, updatedAt: true } })
 export class Transaction extends Document {
 
     @Prop({ required: true, ref: 'User' })
@@ -18,6 +18,12 @@ export class Transaction extends Document {
 
     @Prop({ required: true })
     transactionType: string;
+
+    @Prop()
+    description: string;
+
+    @Prop({ type: Date, required: true })
+    createdAt: Date;
 }
 
 export const TransactionSchema = SchemaFactory.createForClass(Transaction)

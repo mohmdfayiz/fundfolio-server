@@ -23,8 +23,9 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('password')
-    setPassword(@Request() req, @Body() { password }: { password: string }) {
+    setPassword(@Request() req) {
         const userId = req.user.userId;
+        const password: string = req.body?.password;
         return this.authService.setPassword(userId, password);
     }
 
