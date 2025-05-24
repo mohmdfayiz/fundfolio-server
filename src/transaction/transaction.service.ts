@@ -94,7 +94,23 @@ export class TransactionService {
     }
 
     async getTransactionsByMonth(userId: string, month: number, year: number) {
-        const transactions = await this.transactionModel.aggregate([
+
+        const getStats = this.transactionModel.aggregate([
+            { $match: { userId: new Types.ObjectId(userId) } },
+            { $match: { $expr: { $eq: [{ $month: "$createdAt" }, month] } } },
+            { $match: { $expr: { $eq: [{ $year: "$createdAt" }, year] } } },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: "$amount" },
+                    income: { $sum: { $cond: [{ $eq: ["$transactionType", "Income"] }, "$amount", 0] } },
+                    expense: { $sum: { $cond: [{ $eq: ["$transactionType", "Expense"] }, "$amount", 0] } }
+                }
+            },
+            { $project: { _id: 0, totalAmount: 1, income: 1, expense: 1 } }
+        ])
+
+        const getTransactions = this.transactionModel.aggregate([
             { $match: { userId: new Types.ObjectId(userId) } },
             { $match: { $expr: { $eq: [{ $month: "$createdAt" }, month] } } },
             { $match: { $expr: { $eq: [{ $year: "$createdAt" }, year] } } },
@@ -113,7 +129,49 @@ export class TransactionService {
             { $sort: { createdAt: -1 } },
         ])
 
-        return { transactions };
+        const groupByCategories = this.transactionModel.aggregate([
+            { $match: { userId: new Types.ObjectId(userId) } },
+            { $match: { $expr: { $eq: [{ $month: "$createdAt" }, month] } } },
+            { $match: { $expr: { $eq: [{ $year: "$createdAt" }, year] } } },
+            { $group: { _id: "$category", totalAmount: { $sum: "$amount" }, count: { $sum: 1 } } },
+            {
+                $lookup: {
+                    from: 'categories',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'category',
+                    pipeline: [
+                        { $project: { _id: 1, name: 1, icon: 1, bgColour: 1 } }
+                    ]
+                }
+            },
+            { $unwind: '$category' },
+            {
+                $project: {
+                    _id: 1,
+                    name: '$category.name',
+                    icon: '$category.icon',
+                    bgColour: '$category.bgColour',
+                    totalAmount: 1,
+                    count: 1
+                }
+            },
+            { $sort: { totalAmount: 1 } }
+        ])
+
+        const [stats, transactions, categories] = await Promise.all([getStats, getTransactions, groupByCategories]);
+
+        const categoriesWithPercentage = categories.map(category => {
+            category.percentageOfIncome = ((category.totalAmount * -1 / stats[0].income) * 100).toFixed(2);
+            category.percentageOfExpense = ((category.totalAmount / stats[0].expense) * 100).toFixed(2);
+            return category;
+        })
+
+        return {
+            stats: stats[0],
+            transactions: transactions,
+            categories: categoriesWithPercentage
+        };
     }
 
     async create(userId: string, transaction: CreateTransactionDto): Promise<Transaction> {
