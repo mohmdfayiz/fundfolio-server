@@ -1,6 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { GoogleGenAI } from '@google/genai';
 import { Transaction } from './schemas/transaction.schema';
 import { Category } from './schemas/category.schema';
 import mongoose, { Types } from 'mongoose';
@@ -177,6 +176,7 @@ export class TransactionService {
 
     async getSummary(userId: string, month: number, year: number) {
 
+        const { GoogleGenAI } = await import('@google/genai');
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
         const commonStatsPipeline = (month: number, year: number) => [
