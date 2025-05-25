@@ -248,12 +248,14 @@ export class TransactionService {
 
         const data = {
             thisMonth: {
+                month: month,
                 balance: thisMonthStats[0].balance,
                 income: thisMonthStats[0].income,
                 expense: thisMonthStats[0].expense,
                 categories: thisMonthCategoriesWithPercentage
             },
             lastMonth: {
+                month: month - 1 > 0 ? month - 1 : 12,
                 balance: lastMonthStats[0].balance,
                 income: lastMonthStats[0].income,
                 expense: lastMonthStats[0].expense,
@@ -288,8 +290,9 @@ export class TransactionService {
                             3.  **Insights & Explanations:** Provide context and potential explanations for significant changes.  Don't assume knowledge the user doesn't have. For example, If there is a big income then explain that the user received a bonus of x amount.
                             4.  **Concise Summary:** Keep the summary brief and to the point. Aim for 3-4 short/medium paragraphs.
                             5.  **Currency:** Use the rupee symbol (₹) to represent currency in the summary.
-                            6.  **Plain Text Output:**  The summary should be plain text only, formatted into paragraphs.  Do *not* include any special characters like "#", "*", or markdown formatting.  It should be directly renderable in a user interface.
-                            7.  **Don't:** Do not provide any investment advice or personal opinions. Stick to reporting on the data. Do not include any HTML elements. Do not repeat the data already provided in the json.
+                            6.  **Month:** month field in the json data is a number from 1 to 12 representing the month. Use the month name in the summary.
+                            7.  **Plain Text Output:**  The summary should be plain text only, formatted into paragraphs.  Do *not* include any special characters like "#", "*", or markdown formatting. It should be directly renderable in a user interface.
+                            8.  **Don't:** Do not provide any investment advice or personal opinions. Stick to reporting on the data. Do not include any HTML elements. Do not repeat the data already provided in the json.
                             `
                         }]
                     }],
