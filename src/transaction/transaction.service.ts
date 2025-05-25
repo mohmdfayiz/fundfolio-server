@@ -176,21 +176,6 @@ export class TransactionService {
 
     async getSummary(userId: string, month: number, year: number) {
 
-        let GoogleGenAI;
-        try {
-            const genaiModule = await import('@google/genai');
-            GoogleGenAI = genaiModule.GoogleGenAI || genaiModule.default?.GoogleGenAI
-
-            if (!GoogleGenAI) {
-                throw new Error('GoogleGenAI constructor not found in imported module');
-            }
-        } catch (error) {
-            console.error('Failed to import @google/genai:', error);
-            throw new Error('AI service unavailable');
-        }
-
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
         const commonStatsPipeline = (month: number, year: number) => [
             { $match: { userId: new Types.ObjectId(userId) } },
             { $match: { $expr: { $eq: [{ $month: "$createdAt" }, month] } } },
@@ -276,37 +261,57 @@ export class TransactionService {
             }
         }
 
-        const summary = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            config: { temperature: 0.5, maxOutputTokens: 1000 },
-            contents: [
-                {
-                    text: `
-                    ## Context
-                    You are a financial assistant helping a user understand their monthly spending.
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: `
+                            ## Context
+                            You are a financial assistant helping a user understand their monthly spending.
 
-                    ## Task
-                    Generate a concise and insightful summary of the user's financial transactions for the current month, based on the provided JSON data.
+                            ## Task
+                            Generate a concise and insightful summary of the user's financial transactions for the current month, based on the provided JSON data.
 
-                    ## Data
-                    Here is the JSON data of the user's transactions for the current month and the previous month:
-                    ${JSON.stringify(data, null, 2)}
+                            ## Data
+                            Here is the JSON data of the user's transactions for the current month and the previous month:
+                            ${JSON.stringify(data, null, 2)}
 
-                    ## Instructions
+                            ## Instructions
 
-                    1.  **Focus on Key Metrics:** Analyze the data and highlight important trends, such as total income, total expenses, key spending categories (e.g., groceries, entertainment, utilities), and any significant changes in these categories compared to the previous month.
-                    2.  **Comparative Analysis:**  Compare the current month's spending and income with the previous month's.  Identify any substantial increases or decreases and explain the potential reasons (if discernible from the data).  For example, "Spending on entertainment increased by 20% this month compared to last month."
-                    3.  **Insights & Explanations:** Provide context and potential explanations for significant changes.  Don't assume knowledge the user doesn't have. For example, If there is a big income then explain that the user received a bonus of x amount.
-                    4.  **Concise Summary:** Keep the summary brief and to the point. Aim for 3-4 short/medium paragraphs.
-                    5.  **Currency:** Use the rupee symbol (₹) to represent currency in the summary.
-                    6.  **Plain Text Output:**  The summary should be plain text only, formatted into paragraphs.  Do *not* include any special characters like "#", "*", or markdown formatting.  It should be directly renderable in a user interface.
-                    7.  **Don't:** Do not provide any investment advice or personal opinions. Stick to reporting on the data. Do not include any HTML elements. Do not repeat the data already provided in the json.
-                    `
-                }
-            ]
-        })
+                            1.  **Focus on Key Metrics:** Analyze the data and highlight important trends, such as total income, total expenses, key spending categories (e.g., groceries, entertainment, utilities), and any significant changes in these categories compared to the previous month.
+                            2.  **Comparative Analysis:**  Compare the current month's spending and income with the previous month's.  Identify any substantial increases or decreases and explain the potential reasons (if discernible from the data).  For example, "Spending on entertainment increased by 20% this month compared to last month."
+                            3.  **Insights & Explanations:** Provide context and potential explanations for significant changes.  Don't assume knowledge the user doesn't have. For example, If there is a big income then explain that the user received a bonus of x amount.
+                            4.  **Concise Summary:** Keep the summary brief and to the point. Aim for 3-4 short/medium paragraphs.
+                            5.  **Currency:** Use the rupee symbol (₹) to represent currency in the summary.
+                            6.  **Plain Text Output:**  The summary should be plain text only, formatted into paragraphs.  Do *not* include any special characters like "#", "*", or markdown formatting.  It should be directly renderable in a user interface.
+                            7.  **Don't:** Do not provide any investment advice or personal opinions. Stick to reporting on the data. Do not include any HTML elements. Do not repeat the data already provided in the json.
+                            `
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.5,
+                        maxOutputTokens: 1000,
+                    }
+                })
+            });
 
-        return { summary: summary.text }
+            if (!response.ok) {
+                throw new Error(`Gemini API request failed: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const summaryText = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate summary';
+
+            return { summary: summaryText };
+        } catch (aiError) {
+            console.error('AI generation failed:', aiError);
+            throw new Error('Failed to generate financial summary');
+        }
     }
 
     async create(userId: string, transaction: CreateTransactionDto): Promise<Transaction> {
