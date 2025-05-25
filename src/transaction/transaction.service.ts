@@ -176,7 +176,19 @@ export class TransactionService {
 
     async getSummary(userId: string, month: number, year: number) {
 
-        const { GoogleGenAI } = await import('@google/genai');
+        let GoogleGenAI;
+        try {
+            const genaiModule = await import('@google/genai');
+            GoogleGenAI = genaiModule.GoogleGenAI || genaiModule.default?.GoogleGenAI
+
+            if (!GoogleGenAI) {
+                throw new Error('GoogleGenAI constructor not found in imported module');
+            }
+        } catch (error) {
+            console.error('Failed to import @google/genai:', error);
+            throw new Error('AI service unavailable');
+        }
+
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
         const commonStatsPipeline = (month: number, year: number) => [
