@@ -57,6 +57,12 @@ export class TransactionController {
         return await this.transactionService.getTransactionsByMonth(userId, parseInt(month), parseInt(year));
     }
 
+    @Get('summary/:month/:year')
+    async getSummary(@Request() req, @Param('month') month: string, @Param('year') year: string) {
+        const userId = req.user.userId;
+        return await this.transactionService.getSummary(userId, parseInt(month), parseInt(year));
+    }
+
     @Get('category')
     async getTransactionCategories(@Request() req): Promise<Category[]> {
         const userId = req.user.userId;
