@@ -234,32 +234,44 @@ export class TransactionService {
             lastMonthGroupByCategories
         ] = await Promise.all([getThisMonthStats, getLastMonthStats, getThisMonthGroupByCategories, getLastMonthGroupByCategories])
 
+        // Handle case where there's no data for this month
+        const thisMonthData = thisMonthStats[0] || { balance: 0, income: 0, expense: 0 };
+
+        // Handle case where there's no data for last month
+        const lastMonthData = lastMonthStats[0] || { balance: 0, income: 0, expense: 0 };
+
         const thisMonthCategoriesWithPercentage = thisMonthGroupByCategories.map(category => {
-            category.percentageOfIncome = thisMonthStats[0].income === 0 ? 0 : ((category.totalAmount * -1 / thisMonthStats[0].income) * 100).toFixed(2);
-            category.percentageOfExpense = thisMonthStats[0].expense === 0 ? 0 : ((category.totalAmount / thisMonthStats[0].expense) * 100).toFixed(2);
+            category.percentageOfIncome = thisMonthData.income === 0 ? 0 : ((category.totalAmount * -1 / thisMonthData.income) * 100).toFixed(2);
+            category.percentageOfExpense = thisMonthData.expense === 0 ? 0 : ((category.totalAmount / thisMonthData.expense) * 100).toFixed(2);
             return category;
         })
 
         const lastMonthCategoriesWithPercentage = lastMonthGroupByCategories.map(category => {
-            category.percentageOfIncome = lastMonthStats[0].income === 0 ? 0 : ((category.totalAmount * -1 / lastMonthStats[0].income) * 100).toFixed(2);
-            category.percentageOfExpense = lastMonthStats[0].expense === 0 ? 0 : ((category.totalAmount / lastMonthStats[0].expense) * 100).toFixed(2);
+            category.percentageOfIncome = lastMonthData.income === 0 ? 0 : ((category.totalAmount * -1 / lastMonthData.income) * 100).toFixed(2);
+            category.percentageOfExpense = lastMonthData.expense === 0 ? 0 : ((category.totalAmount / lastMonthData.expense) * 100).toFixed(2);
             return category;
         })
+
+        // Determine if we have data for comparison
+        const hasLastMonthData = lastMonthStats.length > 0;
+        const hasThisMonthData = thisMonthStats.length > 0;
 
         const data = {
             thisMonth: {
                 month: month,
-                balance: thisMonthStats[0].balance,
-                income: thisMonthStats[0].income,
-                expense: thisMonthStats[0].expense,
-                categories: thisMonthCategoriesWithPercentage
+                balance: thisMonthData.balance,
+                income: thisMonthData.income,
+                expense: thisMonthData.expense,
+                categories: thisMonthCategoriesWithPercentage,
+                hasData: hasThisMonthData
             },
             lastMonth: {
                 month: month - 1 > 0 ? month - 1 : 12,
-                balance: lastMonthStats[0].balance,
-                income: lastMonthStats[0].income,
-                expense: lastMonthStats[0].expense,
-                categories: lastMonthCategoriesWithPercentage
+                balance: lastMonthData.balance,
+                income: lastMonthData.income,
+                expense: lastMonthData.expense,
+                categories: lastMonthCategoriesWithPercentage,
+                hasData: hasLastMonthData
             }
         }
 
@@ -286,14 +298,16 @@ export class TransactionService {
                             ## Instructions
 
                             1.  **Focus on Key Metrics:** Analyze the data and highlight important trends, such as total income, total expenses, key spending categories (e.g., groceries, entertainment, utilities), and any significant changes in these categories compared to the previous month.
-                            2.  **Comparative Analysis:**  Compare the current month's spending and income with the previous month's.  Identify any substantial increases or decreases and explain the potential reasons (if discernible from the data).  For example, "Spending on entertainment increased by 20% this month compared to last month."
-                            3.  **Insights & Explanations:** Provide context and potential explanations for significant changes.  Don't assume knowledge the user doesn't have. For example, If there is a big income then explain that the user received a bonus of x amount.
-                            4.  **Concise Summary:** Keep the summary brief and to the point. Aim for 3-4 short/medium paragraphs.
-                            5.  **Currency:** Use the rupee symbol (₹) to represent currency in the summary.
-                            6.  **Month:** month field in the json data is a number from 1 to 12 representing the month. Use the month name in the summary.
-                            7.  **Plain Text Output:**  The summary should be plain text only, formatted into paragraphs.  Do *not* include any special characters like "#", "*", or markdown formatting. It should be directly renderable in a user interface.
-                            8.  **Don't:** Do not provide any investment advice or personal opinions. Stick to reporting on the data. Do not include any HTML elements. Do not repeat the data already provided in the json.
-                            `
+                            2.  **Comparative Analysis:**  Compare the current month's spending and income with the previous month's ONLY if lastMonth.hasData is true. If there's no previous month data, focus on the current month's performance and mention that this appears to be the first month of tracking or no previous data is available.
+                            3.  **Handle Missing Data:** If thisMonth.hasData is false, indicate that no transactions were recorded for this month. If lastMonth.hasData is false, mention that no previous month data is available for comparison.
+                            4.  **Insights & Explanations:** Provide context and potential explanations for significant changes.  Don't assume knowledge the user doesn't have. For example, If there is a big income then explain that the user received a bonus of x amount.
+                            5.  **Concise Summary:** Keep the summary brief and to the point. Aim for 3-4 short/medium paragraphs.
+                            6.  **Currency:** Use the rupee symbol (₹) to represent currency in the summary. Do not use '-' to represent expenses (e.g., use ₹10,000 instead of -₹10,000).
+                            7.  **Month:** month field in the json data is a number from 1 to 12 representing the month. Use the month name in the summary.
+                            8.  **Count:** count field in the json data is a number representing the number of transactions made in a particular category.
+                            9.  **Plain Text Output:**  The summary should be plain text only, formatted into paragraphs.  Do *not* include any special characters like "#", "*", or markdown formatting. It should be directly renderable in a user interface.
+                            10.  **Don't:** Do not provide any investment advice or personal opinions. Stick to reporting on the data. Do not include any HTML elements. Do not repeat the data already provided in the json.
+                        `
                         }]
                     }],
                     generationConfig: {
