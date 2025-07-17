@@ -79,7 +79,11 @@ export class TransactionService {
             { $match: { userId: new Types.ObjectId(userId) } },
             { $group: { _id: null, income: { $sum: { $cond: [{ $eq: ["$transactionType", "Income"] }, "$amount", 0] } }, expense: { $sum: { $cond: [{ $eq: ["$transactionType", "Expense"] }, "$amount", 0] } } } },
         ])
-        return { income: balance[0]?.income, expense: balance[0]?.expense, balance: balance[0]?.income + balance[0]?.expense }
+        return {
+            income: parseFloat(balance[0]?.income.toFixed(2)),
+            expense: parseFloat(balance[0]?.expense.toFixed(2)),
+            balance: parseFloat((balance[0]?.income + balance[0]?.expense).toFixed(2))
+        }
     }
 
     async getStats(userId: string, month: number, year: number): Promise<any> {
