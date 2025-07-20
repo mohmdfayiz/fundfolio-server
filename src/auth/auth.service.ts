@@ -37,7 +37,7 @@ export class AuthService {
         await this.tokenModel.create({ userId: user._id, refreshToken });
 
         return {
-            user: { _id: user._id, email: user.email, username: user.username, profilePic: user.profilePic },
+            user: { _id: user._id, email: user.email, username: user.username, profilePic: user.profilePic, currency: user?.currency },
             accessToken,
             refreshToken,
         };
@@ -83,7 +83,8 @@ export class AuthService {
             const newRefreshToken = await this.generateRefreshToken(payload.userId, payload.email);
 
             // Update the refresh token
-            await this.tokenModel.findByIdAndUpdate(token._id, { refreshToken: newRefreshToken });
+            token.refreshToken = newRefreshToken;
+            await token.save();
 
             return {
                 accessToken: newAccessToken,
@@ -95,7 +96,7 @@ export class AuthService {
     }
 
     async logout(refreshToken: string, allDevices: boolean) {
-        
+
         if (allDevices) {
             try {
                 // Verify the refresh token
