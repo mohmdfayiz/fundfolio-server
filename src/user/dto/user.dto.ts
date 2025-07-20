@@ -8,5 +8,6 @@ export class UpdateUserDto {
     email?: string;
     password?: string;
     profilePicture?: string;
+    currency?: string;
     isActive?: boolean;
 }

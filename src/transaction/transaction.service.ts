@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Transaction } from './schemas/transaction.schema';
+import { User } from 'src/user/schemas/user.schema';
 import { Category } from './schemas/category.schema';
 import mongoose, { Types } from 'mongoose';
 import { CreateCategoryDto } from './dto/category.dto';
@@ -13,7 +14,9 @@ export class TransactionService {
         @InjectModel(Transaction.name)
         private transactionModel: mongoose.Model<Transaction>,
         @InjectModel(Category.name)
-        private categoryModel: mongoose.Model<Category>
+        private categoryModel: mongoose.Model<Category>,
+        @InjectModel(User.name)
+        private userModel: mongoose.Model<User>
     ) { }
 
     async getTransactionsGroup(userId: string): Promise<Transaction[]> {
@@ -225,6 +228,7 @@ export class TransactionService {
             { $sort: { totalAmount: 1 } } as any
         ]
 
+        const getUser = this.userModel.findById(userId)
         const getThisMonthStats = this.transactionModel.aggregate(commonStatsPipeline(month, year))
         const getLastMonthStats = this.transactionModel.aggregate(commonStatsPipeline(month - 1 > 0 ? month - 1 : 12, month - 1 > 0 ? year : year - 1))
 
@@ -232,11 +236,12 @@ export class TransactionService {
         const getLastMonthGroupByCategories = this.transactionModel.aggregate(commonCategoriesPipeline(month - 1 > 0 ? month - 1 : 12, month - 1 > 0 ? year : year - 1))
 
         const [
+            user,
             thisMonthStats,
             lastMonthStats,
             thisMonthGroupByCategories,
             lastMonthGroupByCategories
-        ] = await Promise.all([getThisMonthStats, getLastMonthStats, getThisMonthGroupByCategories, getLastMonthGroupByCategories])
+        ] = await Promise.all([getUser, getThisMonthStats, getLastMonthStats, getThisMonthGroupByCategories, getLastMonthGroupByCategories])
 
         // Handle case where there's no data for this month
         const thisMonthData = thisMonthStats[0] || { balance: 0, income: 0, expense: 0 };
@@ -306,7 +311,7 @@ export class TransactionService {
                             3.  **Handle Missing Data:** If thisMonth.hasData is false, indicate that no transactions were recorded for this month. If lastMonth.hasData is false, mention that no previous month data is available for comparison.
                             4.  **Insights & Explanations:** Provide context and potential explanations for significant changes.  Don't assume knowledge the user doesn't have. For example, If there is a big income then explain that the user received a bonus of x amount.
                             5.  **Concise Summary:** Keep the summary brief and to the point. Aim for 3-4 short/medium paragraphs.
-                            6.  **Currency:** Use the rupee symbol (₹) to represent currency in the summary. Do not use '-' to represent expenses (e.g., use ₹10,000 instead of -₹10,000).
+                            6.  **Currency:** Use the symbol "${user?.currency || '$'}" to represent currency in the summary. Do not use '-' to represent expenses (e.g., use $10,000 instead of -$10,000).
                             7.  **Month:** month field in the json data is a number from 1 to 12 representing the month. Use the month name in the summary.
                             8.  **Count:** count field in the json data is a number representing the number of transactions made in a particular category.
                             9.  **Plain Text Output:**  The summary should be plain text only, formatted into paragraphs.  Do *not* include any special characters like "#", "*", or markdown formatting. It should be directly renderable in a user interface.

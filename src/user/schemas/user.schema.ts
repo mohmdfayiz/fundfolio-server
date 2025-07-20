@@ -13,6 +13,9 @@ export class User extends Document {
     @Prop()
     profilePic: string;
 
+    @Prop()
+    currency: string;
+
     @Prop({ select: false })
     password: string;
 
